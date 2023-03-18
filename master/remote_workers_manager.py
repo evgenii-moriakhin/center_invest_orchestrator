@@ -175,7 +175,7 @@ class RemoteWorkerManager:
                     async with self.session.get(worker_status_url) as response:
                         worker_status = await response.json()
                         worker_name = worker_status.get("worker_name")
-                        worker_status = worker_status.get("status")
+                        status = worker_status.get("status")
                         memory_usage = worker_status.get("memory_usage")
                         cpu_usage = worker_status.get("cpu_usage")
 
@@ -183,11 +183,11 @@ class RemoteWorkerManager:
                             await self.set_worker_data(worker_name, {
                                 "name": worker_name,
                                 "host": vm,
-                                "status": worker_status,
+                                "status": status,
                                 "memory_usage": memory_usage,
                                 "cpu_usage": cpu_usage,
                             })
-                            logger.info(f"Worker {worker_name} initialized with status {worker_status} on {vm}")
+                            logger.info(f"Worker {worker_name} initialized with status {status} on {vm}")
                 except Exception as e:
                     logger.warning(f"Failed to initialize worker data for VM {vm}: {e}")
                     continue
