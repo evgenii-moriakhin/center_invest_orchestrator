@@ -1,43 +1,58 @@
-#!/bin/bash
+#!/bin/sh
+set -e
 
-while true; do
-  echo "$(date -Iseconds) Fetching hosts from API"
-  hosts=$(curl -s "$API_URL")
-  if [ ! -z "$hosts" ]; then
-    echo "$(date -Iseconds) Creating upstream block for healthy hosts"
-    upstream_block="upstream backend {\n"
-    for host in $(echo "$hosts" | jq -r '.[]'); do
-      upstream_block+="  server $host;\n"
+log() {
+    echo "$(date +"%Y-%m-%d %H:%M:%S") $1"
+}
+
+# Fetch hosts and create an upstream block
+fetch_hosts() {
+    log "Fetching hosts from API"
+    response=$(curl -s -f -S $API_URL 2>&1)
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        log "Error: Failed to fetch hosts from API: $response"
+        return $ret
+    fi
+
+    hosts=$(echo $response | jq -r '.[]')
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        log "Error: Failed to parse hosts from API response: $hosts"
+        return $ret
+    fi
+
+    upstream_block=$(printf "upstream backend {\n")
+    for host in $hosts; do
+        log "Adding host to upstream block: $host"
+        upstream_block=$(printf "%s    server %s;\n" "$upstream_block" "$host")
     done
-    upstream_block+="}"
-    echo -e "$upstream_block" > /etc/nginx/conf.d/upstream.conf
+    upstream_block=$(printf "%s}\n" "$upstream_block")
+    echo "$upstream_block" > /etc/nginx/conf.d/upstream.conf
+}
 
-    echo "$(date -Iseconds) Reload#!/bin/bash
+# Fetch initial hosts and reload nginx
+fetch_hosts || true
+log "Reloading Nginx configuration"
+nginx -c /etc/nginx/nginx.conf -t # Test the configuration
 
-while true; do
-  echo "$(date -Iseconds) Fetching hosts from API"
-  hosts=$(curl -s "$API_URL")
-  if [ ! -z "$hosts" ]; then
-    echo "$(date -Iseconds) Creating upstream block for healthy hosts"
-    upstream_block="upstream backend {\n"
-    for host in $(echo "$hosts" | jq -r '.[]'); do
-      upstream_block+="  server $host;\n"
-    done
-    upstream_block+="}"
-    echo -e "$upstream_block" > /etc/nginx/conf.d/upstream.conf
+# Create the PID file
+touch /var/run/nginx.pid
 
-    echo "$(date -Iseconds) Reloading Nginx configuration"
-    nginx -t && nginx -s reload
-  else
-    echo "$(date -Iseconds) No healthy hosts found, skipping Nginx configuration update"
-  fi
-  echo "$(date -Iseconds) Sleeping for 5 minutes"
-  sleep 300
-doneing Nginx configuration"
-    nginx -t && nginx -s reload
-  else
-    echo "$(date -Iseconds) No healthy hosts found, skipping Nginx configuration update"
-  fi
-  echo "$(date -Iseconds) Sleeping for 5 minutes"
-  sleep 300
-done
+# Start Nginx in the background
+log "Starting Nginx"
+nginx -c /etc/nginx/nginx.conf -g "daemon off;" &
+
+# Set up a periodic task to fetch hosts and reload nginx
+(
+  while true; do
+    fetch_hosts || true
+    log "Reloading Nginx configuration"
+    nginx -s reload
+    log "Sleeping for 5 minutes"
+    sleep 300 # Sleep for 5 minutes
+  done
+) &
+
+# Keep the script running
+wait
