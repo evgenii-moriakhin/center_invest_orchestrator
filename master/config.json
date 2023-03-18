@@ -1,0 +1,23 @@
+{
+  "app_info": {
+    "image": "app_image",
+    "git_repo": "https://github.com/evgenii-moriakhin/center_invest_orchestrator.git",
+    "dockerfile": "app_example/Dockerfile",
+    "app_port": 5000,
+    "healthcheck": "/healthcheck"
+  },
+  "worker_info": {
+    "git_repo": "https://github.com/evgenii-moriakhin/center_invest_orchestrator.git",
+    "dockerfile": "worker/Dockerfile",
+    "port": 8080
+  },
+  "worker_limits": {
+    "min_workers": 2,
+    "max_workers": 10,
+    "memory_limit": 80,
+    "cpu_limit": 80
+  },
+  "virtual_machines": [
+    "192.168.1.62"
+  ]
+}
