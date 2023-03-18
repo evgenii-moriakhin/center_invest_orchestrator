@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 
 from aiohttp import web
 from master.remote_workers_manager import RemoteWorkerManager
@@ -7,7 +8,7 @@ from master.workers_poller import WorkersPoller
 from master.orchestrator_api import OrchestratorAPI
 
 async def main():
-    with open("config.json") as config_file:
+    with open(os.getenv("CONFIG_MASTER")) as config_file:
         config = json.load(config_file)
 
     worker_manager = RemoteWorkerManager(app_info=config["app_info"],
@@ -19,7 +20,7 @@ async def main():
     api_app = orchestrator_api.create_app()
     runner = web.AppRunner(api_app)
     await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', 8000)
+    site = web.TCPSite(runner, '0.0.0.0', os.getenv("MASTER_API_PORT"))
     await site.start()
 
     workers_poller = WorkersPoller(worker_manager)

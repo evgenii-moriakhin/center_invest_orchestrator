@@ -17,21 +17,23 @@ if docker ps -a --format '{{.Names}}' | grep -Eq "^${WORKER_NAME}\$"; then
 fi
 
 # Remove containers running worker_image
-docker ps -a --filter ancestor=worker_image --format '{{.ID}}' | xargs -r docker rm -f
+docker ps -a --filter ancestor="worker_image_${APP_IMAGE}" --format '{{.ID}}' | xargs -r docker rm -f
 
 # Clone worker git repository and build Docker image
 rm -rf worker_repo
 git clone $WORKER_GIT_REPO worker_repo
 cd worker_repo
-WORKER_DIR=$(dirname $WORKER_DOCKERFILE)
-cp -R "../WORKER_DIR" .
-docker build --no-cache -t worker_image -f $WORKER_DOCKERFILE .
+WORKER_DIR=$(dirname "$WORKER_DOCKERFILE")
+cd $WORKER_DIR
+echo "Current directory: $(pwd); Dockerfile path: $WORKER_DOCKERFILE"
+docker build --no-cache -t "worker_image_${APP_IMAGE}" .
+cd -
 cd ..
 
 # Run the Docker container
 docker run -d --name $WORKER_NAME -p $WORKER_PORT:$WORKER_PORT \
   -e APP_PORT=$APP_PORT -e HEALTHCHECK_API=$HEALTHCHECK_API -e APP_DOCKERFILE=$APP_DOCKERFILE \
   -e WORKER_PORT=$WORKER_PORT -e APP_GIT_REPO=$APP_GIT_REPO \
-  -e APP_IMAGE=$APP_IMAGE -e WORKER_DOCKERFILE=$WORKER_DOCKERFILE -e WORKER_NAME=$WORKER_NAME \
+  -e APP_IMAGE=$APP_IMAGE -e WORKER_NAME=$WORKER_NAME \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  worker_image
+  "worker_image_${APP_IMAGE}"

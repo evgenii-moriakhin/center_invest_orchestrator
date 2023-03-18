@@ -89,7 +89,7 @@ class OrchestratorAPI:
         return web.Response(status=204)
 
     async def get_hosts_with_healthy_workers(self, request: web.Request) -> web.Response:
-        healthy_hosts = [worker_data["host"] for worker_data in self.worker_manager.workers_data.values() if worker_data["status"] == "healthy"]
+        healthy_hosts = [f"{worker_data['host']}:{self.worker_manager.app_port}" for worker_data in self.worker_manager.workers_data.values() if worker_data["status"] == "healthy"]
         return web.json_response(healthy_hosts)
 
     async def get_master_settings(self, request: web.Request) -> web.Response:
