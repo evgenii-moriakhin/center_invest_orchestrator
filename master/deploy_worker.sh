@@ -10,6 +10,15 @@ HEALTHCHECK_API=$7
 APP_DOCKERFILE=$8
 WORKER_DOCKERFILE=$9
 
+
+# Remove existing container with the same name if it's running
+if docker ps -a --format '{{.Names}}' | grep -Eq "^${WORKER_NAME}\$"; then
+  docker rm -f $WORKER_NAME
+fi
+
+# Remove containers running worker_image
+docker ps -a --filter ancestor=worker_image --format '{{.ID}}' | xargs -r docker rm -f
+
 # Clone worker git repository and build Docker image
 rm -rf worker_repo
 git clone $WORKER_GIT_REPO worker_repo
@@ -18,11 +27,6 @@ WORKER_DIR=$(dirname $WORKER_DOCKERFILE)
 cp -R "../WORKER_DIR" .
 docker build --no-cache -t worker_image -f $WORKER_DOCKERFILE .
 cd ..
-
-# Remove existing container with the same name if it's running
-if docker ps -a --format '{{.Names}}' | grep -Eq "^${WORKER_NAME}\$"; then
-  docker rm -f $WORKER_NAME
-fi
 
 # Run the Docker container
 docker run -d --name $WORKER_NAME -p $WORKER_PORT:$WORKER_PORT \

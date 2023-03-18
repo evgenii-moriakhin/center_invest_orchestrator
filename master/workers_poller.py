@@ -18,7 +18,7 @@ class WorkersPoller:
                 await self._poll_workers()
         except Exception as e:
             logger.exception(f"Error in poll_workers, retrying after 60 sec: {e!r}")
-            await asyncio.sleep(60)
+            await asyncio.sleep(15)
 
     async def _poll_workers(self):
         self.worker_manager.session = self.session
@@ -28,4 +28,4 @@ class WorkersPoller:
                      for worker in self.worker_manager.workers_data.values()]
             await asyncio.gather(*tasks)
             await self.worker_manager.check_and_scale_workers()
-            await asyncio.sleep(30)
+            await asyncio.sleep(7)

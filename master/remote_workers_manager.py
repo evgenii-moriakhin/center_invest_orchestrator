@@ -54,6 +54,7 @@ class RemoteWorkerManager:
             if not self.is_app_healthy(worker_name):
                 if self.is_app_failed_worker_running(worker_name) and "host" in worker_data:
                     await self.start_app(worker_name, worker_data["host"])
+                    await asyncio.sleep(1)
                 else:
                     logger.warning(f"Worker {worker_name} is not healthy, restarting...")
                     await self.restart_worker(worker_name)
@@ -136,9 +137,11 @@ class RemoteWorkerManager:
     async def deploy_worker(self, host: str) -> None:
         new_worker_name = f"worker-{str(uuid.uuid4())}"
         await self._deploy_worker_to_host(host, new_worker_name)
+        await asyncio.sleep(5)
         try:
             await self.start_app(new_worker_name, host)
-        except:
+            await asyncio.sleep(1)
+        except Exception as e:
             logger.error(f"Failed started app on host {host} and worker_name {new_worker_name}")
 
     async def start_app(self, worker_name, host):
@@ -156,6 +159,7 @@ class RemoteWorkerManager:
         await self.remove_worker(worker_name)
         try:
             await self._deploy_worker_to_host(worker_host, worker_name)
+            await asyncio.sleep(5)
             logger.info(f"Worker {worker_name} restarted on {worker_host}")
         except Exception as e:
             logger.error(f"Error restarting worker {worker_name} on {worker_host}: {str(e)}")
