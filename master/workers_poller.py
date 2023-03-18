@@ -24,8 +24,10 @@ class WorkersPoller:
         self.worker_manager.session = self.session
         await self.worker_manager.initialize_workers_data()
         while True:
-            tasks = [self.worker_manager.update_worker_data(worker)
-                     for worker in self.worker_manager.workers_data.values()]
+            tasks = [
+                self.worker_manager.update_worker_data(worker)
+                for worker in self.worker_manager.workers_data.values()
+            ]
             await asyncio.gather(*tasks)
             await self.worker_manager.check_and_scale_workers()
             await asyncio.sleep(7)
