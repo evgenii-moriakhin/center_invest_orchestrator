@@ -50,11 +50,14 @@ class RemoteWorkerManager:
         min_workers = self.worker_limits["min_workers"]
         max_workers = self.worker_limits["max_workers"]
 
-        for worker_name, worker_data in self.workers_data.items():
-            if not self.is_worker_healthy(worker_name):
-                logger.warning(f"Worker {worker_name} is not healthy, restarting...")
-                await self.restart_worker(worker_name)
-                continue
+        for worker_name, worker_data in dict(**self.workers_data).items():
+            if not self.is_app_healthy(worker_name):
+                if self.is_app_failed_worker_running(worker_name) and "host" in worker_data:
+                    await self.start_app(worker_name, worker_data["host"])
+                else:
+                    logger.warning(f"Worker {worker_name} is not healthy, restarting...")
+                    await self.restart_worker(worker_name)
+                    continue
 
             healthy_workers += 1
             memory_usage = worker_data.get("memory_usage", 0)
@@ -82,8 +85,11 @@ class RemoteWorkerManager:
         else:
             logger.info(f"Healthy workers within limits, current count: {healthy_workers}")
 
-    def is_worker_healthy(self, worker_name: str) -> bool:
+    def is_app_healthy(self, worker_name: str) -> bool:
         return self.workers_data[worker_name].get("status") == "healthy"
+
+    def is_app_failed_worker_running(self, worker_name: str) -> bool:
+        return self.workers_data[worker_name].get("status") == "app_failed_worker_running"
 
     async def update_worker_data(self, worker: dict) -> None:
         async with self.worker_operation_lock:
@@ -94,7 +100,7 @@ class RemoteWorkerManager:
                         await self.set_worker_data(worker["name"], data)
                         logger.info(f"Updated worker {worker['name']} status to {data.get('status')}")
                     else:
-                        await self.set_worker_value_data(worker["name"], "status", "failed")
+                        await self.set_worker_value_data(worker["name"], "status", "app_failed_worker_running")
                         logger.warning(f"Failed to update worker {worker['name']} status: {response.status}")
             except Exception as e:
                 await self.set_worker_value_data(worker["name"], "status", "failed")
@@ -131,15 +137,19 @@ class RemoteWorkerManager:
         new_worker_name = f"worker-{str(uuid.uuid4())}"
         await self._deploy_worker_to_host(host, new_worker_name)
         try:
-            async with self.session.post(f"http://{host}:{self.worker_port}/start_app") as response:
-                if response.status == 200:
-                    logger.info(f"Successfully started app on host {host} and worker_name {new_worker_name}")
-                    await self.set_worker_data(new_worker_name, {"name": new_worker_name, "host": host})
-                    logger.info(f"New worker {new_worker_name} deployed on {host}")
-                else:
-                    logger.error(f"Failed started app on host {host} and worker_name {new_worker_name}")
+            await self.start_app(new_worker_name, host)
         except:
             logger.error(f"Failed started app on host {host} and worker_name {new_worker_name}")
+
+    async def start_app(self, worker_name, host):
+        async with self.worker_operation_lock:
+            async with self.session.post(f"http://{host}:{self.worker_port}/start_app") as response:
+                if response.status == 200:
+                    logger.info(f"Successfully started app on host {host} and worker_name {worker_name}")
+                    await self.set_worker_data(worker_name, {"name": worker_name, "host": host})
+                    logger.info(f"New worker {worker_name} deployed on {host}")
+                else:
+                    logger.error(f"Failed started app on host {host} and worker_name {worker_name}")
 
     async def restart_worker(self, worker_name: str) -> None:
         worker_host = self.workers_data[worker_name]["host"]

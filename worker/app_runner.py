@@ -81,7 +81,7 @@ class AppRunner:
                     return "healthy"
                 else:
                     logging.info(f"App healthcheck FAIL")
-                    return "failed"
+                    return "app_failed_worker_running"
             except (requests.exceptions.RequestException, requests.exceptions.Timeout):
                 logging.info(f"App healthcheck FAIL. Trying check running container")
 
@@ -90,7 +90,7 @@ class AppRunner:
             return "healthy"
         else:
             logging.info(f"App healthcheck FAIL")
-            return "failed"
+            return "app_failed_worker_running"
 
     def get_memory_usage(self):
         if not self.container:
