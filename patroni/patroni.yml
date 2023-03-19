@@ -1,0 +1,35 @@
+scope: &scope pg_cluster
+name: &name pg_node_1
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: *name:8008
+
+etcd:
+  host: host.docker.internal:2379
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      parameters:
+        max_connections: 100
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: *name:5432
+  data_dir: *PGDATA
+  pg_hba:
+  - host replication replicator 127.0.0.1/32 md5
+  - host all all 0.0.0.0/0 md5
+  authentication:
+    replication:
+      username: replicator
+      password: replicator_password
+    superuser:
+      username: postgres
+      password: postgres_password

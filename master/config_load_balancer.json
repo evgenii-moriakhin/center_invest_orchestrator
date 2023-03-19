@@ -9,7 +9,7 @@
   "worker_info": {
     "git_repo": "https://github.com/evgenii-moriakhin/center_invest_orchestrator.git",
     "dockerfile": "worker/Dockerfile",
-    "port": 8090
+    "port": 8002
   },
   "worker_limits": {
     "min_workers": 2,

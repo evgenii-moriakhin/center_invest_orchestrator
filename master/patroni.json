@@ -1,15 +1,15 @@
-{
+ {
   "app_info": {
-    "image": "app_image",
+    "image": "patroni_image",
     "git_repo": "https://github.com/evgenii-moriakhin/center_invest_orchestrator.git",
-    "dockerfile": "app_example/Dockerfile",
-    "app_port": 5000,
-    "healthcheck": "/healthcheck"
+    "dockerfile": "patroni/Dockerfile",
+    "app_port": 5432,
+    "healthcheck": "/health"
   },
   "worker_info": {
     "git_repo": "https://github.com/evgenii-moriakhin/center_invest_orchestrator.git",
     "dockerfile": "worker/Dockerfile",
-    "port": 8001
+    "port": 8082
   },
   "worker_limits": {
     "min_workers": 2,
