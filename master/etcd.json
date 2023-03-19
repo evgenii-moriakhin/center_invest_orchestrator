@@ -3,7 +3,7 @@
     "image": "etcd_image",
     "git_repo": "https://github.com/evgenii-moriakhin/center_invest_orchestrator.git",
     "dockerfile": "etcd/Dockerfile",
-    "app_port": 5432,
+    "app_port": 2379,
     "healthcheck": "-"
   },
   "worker_info": {

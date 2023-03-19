@@ -1,0 +1,44 @@
+Configuration:
+  status: warn
+
+  Properties:
+    Property:
+      - name: log-path
+        value: "logs"
+      - name: log-archive
+        value: ${log-path}/archive
+      - name: log-pattern
+        value: "[%date{ISO8601}][%-5level][%thread][%class.%method] %message%n"
+
+  Appenders:
+    RollingFile:
+      - name: CONVERT_LOG
+        fileName: ${log-path}/processor.log
+        filePattern: "${log-archive}/convert_dbf.log.%d{yyyy-MM-dd}-%i"
+        PatternLayout:
+          pattern: "${log-pattern}"
+        Policies:
+          TimeBasedTriggeringPolicy: { }
+          SizeBasedTriggeringPolicy:
+            size: 250 MB
+
+    Console:
+      name: CONSOLE_LOG
+      target: SYSTEM_OUT
+      PatternLayout:
+        disableAnsi: "false"
+        follow: "true"
+        pattern: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%highlight{%-5level}{FATAL=magenta, ERROR=red, WARN=yellow, INFO=green, DEBUG=cyan, TRACE=blue}] %style{[%t][%class.%method]}{white}:  %msg%n%throwable"
+
+  Loggers:
+    Root:
+      level: info
+      AppenderRef:
+        - ref: CONSOLE_LOG
+        - ref: CONVERT_LOG
+    Logger:
+      - name: ru.cib
+        level: debug
+        AppenderRef:
+          - ref: CONVERT_LOG
+            level: debug
