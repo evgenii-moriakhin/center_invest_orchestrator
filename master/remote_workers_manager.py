@@ -10,11 +10,11 @@ logger = logging.getLogger(__name__)
 
 class RemoteWorkerManager:
     def __init__(
-        self,
-        app_info: dict,
-        worker_info: dict,
-        worker_limits: Dict[str, int],
-        virtual_machines: List[str],
+            self,
+            app_info: dict,
+            worker_info: dict,
+            worker_limits: Dict[str, int],
+            virtual_machines: List[str],
     ):
         self.worker_limits = worker_limits
         self.virtual_machines = virtual_machines
@@ -59,8 +59,8 @@ class RemoteWorkerManager:
         for worker_name, worker_data in dict(**self.workers_data).items():
             if not self.is_app_healthy(worker_name):
                 if (
-                    self.is_app_failed_worker_running(worker_name)
-                    and "host" in worker_data
+                        self.is_app_failed_worker_running(worker_name)
+                        and "host" in worker_data
                 ):
                     await self.start_app(worker_name, worker_data["host"])
                     await asyncio.sleep(1)
@@ -69,6 +69,7 @@ class RemoteWorkerManager:
                         f"Worker {worker_name} is not healthy, restarting..."
                     )
                     await self.restart_worker(worker_name)
+                    healthy_workers += 1
                     continue
 
             healthy_workers += 1
@@ -76,8 +77,8 @@ class RemoteWorkerManager:
             cpu_usage = worker_data.get("cpu_usage", 0)
 
             if (
-                memory_usage >= self.worker_limits["memory_limit"]
-                or cpu_usage >= self.worker_limits["cpu_limit"]
+                    memory_usage >= self.worker_limits["memory_limit"]
+                    or cpu_usage >= self.worker_limits["cpu_limit"]
             ):
                 logger.info(
                     f"Worker {worker_name} reached resource limits, trying to deploy new worker"
@@ -112,14 +113,14 @@ class RemoteWorkerManager:
 
     def is_app_failed_worker_running(self, worker_name: str) -> bool:
         return (
-            self.workers_data[worker_name].get("status") == "app_failed_worker_running"
+                self.workers_data[worker_name].get("status") == "app_failed_worker_running"
         )
 
     async def update_worker_data(self, worker: dict) -> None:
         async with self.worker_operation_lock:
             try:
                 async with self.session.get(
-                    f"http://{worker['host']}:{self.worker_port}/status"
+                        f"http://{worker['host']}:{self.worker_port}/status"
                 ) as response:
                     data = await response.json()
                     if response.status == 200:
@@ -190,7 +191,7 @@ class RemoteWorkerManager:
     async def deploy_worker(self, host: str) -> None:
         new_worker_name = f"worker-{str(uuid.uuid4())}"
         await self._deploy_worker_to_host(host, new_worker_name)
-        await asyncio.sleep(5)
+        await asyncio.sleep(20)
         try:
             await self.start_app(new_worker_name, host)
             await asyncio.sleep(1)
@@ -202,7 +203,7 @@ class RemoteWorkerManager:
     async def start_app(self, worker_name, host):
         async with self.worker_operation_lock:
             async with self.session.post(
-                f"http://{host}:{self.worker_port}/start_app"
+                    f"http://{host}:{self.worker_port}/start_app"
             ) as response:
                 if response.status == 200:
                     logger.info(
@@ -222,8 +223,10 @@ class RemoteWorkerManager:
         await self.remove_worker(worker_name)
         try:
             await self._deploy_worker_to_host(worker_host, worker_name)
-            await asyncio.sleep(5)
             logger.info(f"Worker {worker_name} restarted on {worker_host}")
+            await asyncio.sleep(5)
+            await self.update_worker_data(self.workers_data[worker_name])
+            await asyncio.sleep(5)
         except Exception as e:
             logger.error(
                 f"Error restarting worker {worker_name} on {worker_host}: {str(e)}"
@@ -300,7 +303,6 @@ class RemoteWorkerManager:
                         logger.error(
                             f"Error stopping the application on worker {worker_name} at {host}: {str(e)}"
                         )
-                        raise
 
                 # Stop and delete the worker container
                 credentials = f"{self.ssh_user}@{host}"

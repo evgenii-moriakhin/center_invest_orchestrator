@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 log() {
@@ -24,8 +24,8 @@ fetch_hosts() {
 
     upstream_block=$(printf "upstream backend {\n")
     for host in $hosts; do
-        if [ "$host" = "127.0.0.1" ]; then
-            host="host.docker.internal"
+        if [[ "$host" == 127.0.0.1* ]]; then
+            host=${host/127.0.0.1/host.docker.internal}
         fi
         log "Adding host to upstream block: $host"
         upstream_block=$(printf "%s    server %s;\n" "$upstream_block" "$host")
@@ -35,7 +35,7 @@ fetch_hosts() {
 }
 
 # Fetch initial hosts and reload nginx
-fetch_hosts || true
+fetch_hosts  true
 log "Reloading Nginx configuration"
 nginx -c /etc/nginx/nginx.conf -t # Test the configuration
 
@@ -49,7 +49,7 @@ nginx -c /etc/nginx/nginx.conf -g "daemon off;" &
 # Set up a periodic task to fetch hosts and reload nginx
 (
   while true; do
-    fetch_hosts || true
+    fetch_hosts  true
     log "Reloading Nginx configuration"
     nginx -s reload
     log "Sleeping for 5 minutes"
