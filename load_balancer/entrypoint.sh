@@ -24,6 +24,9 @@ fetch_hosts() {
 
     upstream_block=$(printf "upstream backend {\n")
     for host in $hosts; do
+        if [ "$host" = "127.0.0.1" ]; then
+            host="host.docker.internal"
+        fi
         log "Adding host to upstream block: $host"
         upstream_block=$(printf "%s    server %s;\n" "$upstream_block" "$host")
     done
