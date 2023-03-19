@@ -3,8 +3,8 @@ FROM postgres:13
 ENV PGDATA=/data/pgdata
 
 RUN apt-get update && \
-    apt-get install -y python3-pip curl jq && \
-    pip3 install patroni[etcd]
+    apt-get install -y python3-pip curl jq libpq-dev && \
+    pip3 install patroni[etcd] psycopg2
 
 COPY patroni.yml /etc/patroni.yml
 

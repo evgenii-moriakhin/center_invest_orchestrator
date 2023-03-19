@@ -3,7 +3,7 @@ name: &name pg_node_1
 
 restapi:
   listen: 0.0.0.0:8008
-  connect_address: *name:8008
+  connect_address: pg_node_1:8008
 
 etcd:
   host: host.docker.internal:2379
@@ -21,8 +21,8 @@ bootstrap:
 
 postgresql:
   listen: 0.0.0.0:5432
-  connect_address: *name:5432
-  data_dir: *PGDATA
+  connect_address: pg_node_1:5432
+  data_dir: /data/pgdata
   pg_hba:
   - host replication replicator 127.0.0.1/32 md5
   - host all all 0.0.0.0/0 md5
